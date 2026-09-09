@@ -1,0 +1,26 @@
+{
+  "name": "@dograh/embed-types",
+  "version": "0.1.0",
+  "description": "Shared TypeScript types for Dograh embed widget and React SDK",
+  "license": "BSD-2-Clause",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0"
+  }
+}

@@ -1,8 +1,10 @@
 import type {
+  ClientToolHandler,
   DograhVoiceCallClientOptions,
   EmbedConfigResponse,
   EmbedInitResponse,
   ToolCallState,
+  ToolInvokeRequestPayload,
   TurnCredentialsResponse,
   VoiceCallSession,
   VoiceCallStatus,
@@ -60,6 +62,7 @@ export class DograhVoiceCallClient {
   private callStartedAt: number | null = null;
   private gracefulDisconnect = false;
   private toolCalls = new Map<string, ToolCallState>();
+  private clientTools: Record<string, ClientToolHandler>;
 
   constructor(options: DograhVoiceCallClientOptions) {
     this.embedToken = options.embedToken;
@@ -69,6 +72,7 @@ export class DograhVoiceCallClient {
       (typeof window !== "undefined" ? window.location.origin : "");
     this.context = { ...(options.context ?? {}) };
     this.playRemoteAudio = options.playRemoteAudio !== false;
+    this.clientTools = { ...(options.clientTools ?? {}) };
     this.callbacks = {
       onStatusChange: options.onStatusChange,
       onError: options.onError,
@@ -93,6 +97,10 @@ export class DograhVoiceCallClient {
 
   setContext(context: Record<string, string | number | boolean | null>): void {
     this.context = { ...context };
+  }
+
+  setClientTools(handlers: Record<string, ClientToolHandler>): void {
+    this.clientTools = { ...handlers };
   }
 
   async loadConfig(): Promise<EmbedConfigResponse> {
@@ -437,9 +445,61 @@ export class DograhVoiceCallClient {
         this.callbacks.onToolCallEnd?.(call);
         break;
       }
+      case "tool-invoke-request":
+        await this.handleToolInvokeRequest(message);
+        break;
       default:
         break;
     }
+  }
+
+  private async handleToolInvokeRequest(
+    message: SignalingMessage,
+  ): Promise<void> {
+    const payload = message.payload as ToolInvokeRequestPayload | undefined;
+    if (!payload?.tool_call_id || !payload.function_name) {
+      return;
+    }
+
+    const handler = this.clientTools[payload.function_name];
+    if (!handler) {
+      this.sendToolInvokeResult(payload.tool_call_id, {
+        error: `No client handler registered for ${payload.function_name}`,
+      });
+      return;
+    }
+
+    try {
+      const result = await handler(payload.arguments ?? {}, {
+        toolCallId: payload.tool_call_id,
+        functionName: payload.function_name,
+        toolUuid: payload.tool_uuid,
+      });
+      this.sendToolInvokeResult(payload.tool_call_id, { result });
+    } catch (error) {
+      const messageText =
+        error instanceof Error ? error.message : String(error);
+      this.sendToolInvokeResult(payload.tool_call_id, { error: messageText });
+    }
+  }
+
+  private sendToolInvokeResult(
+    toolCallId: string,
+    body: { result?: unknown; error?: string },
+  ): void {
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+      return;
+    }
+    this.ws.send(
+      JSON.stringify({
+        type: "tool-invoke-result",
+        payload: {
+          tool_call_id: toolCallId,
+          result: body.result ?? null,
+          error: body.error ?? null,
+        },
+      }),
+    );
   }
 
   private async negotiate(): Promise<void> {

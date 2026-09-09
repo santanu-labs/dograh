@@ -47,6 +47,7 @@
       seenAssistantTurnIds: new Set() // for onMessage diffing
     },
     chatEls: null, // { panel, messages, banner, input, sendBtn, endBtn, endConfirmation, confirmEndBtn } — null in headless
+    clientTools: {}, // function_name -> async (args, ctx) => result
     callbacks: {
       onReady: null,
       onCallStart: null,
@@ -1163,8 +1164,51 @@
         break;
       }
 
+      case 'tool-invoke-request':
+        await handleToolInvokeRequest(message.payload || {});
+        break;
+
       default:
         console.warn('Unknown message type:', message.type);
+    }
+  }
+
+  function sendToolInvokeResult(toolCallId, body) {
+    if (!state.ws || state.ws.readyState !== WebSocket.OPEN) return;
+    state.ws.send(JSON.stringify({
+      type: 'tool-invoke-result',
+      payload: {
+        tool_call_id: toolCallId,
+        result: body.result !== undefined ? body.result : null,
+        error: body.error || null
+      }
+    }));
+  }
+
+  async function handleToolInvokeRequest(payload) {
+    const toolCallId = payload.tool_call_id;
+    const functionName = payload.function_name;
+    if (!toolCallId || !functionName) return;
+
+    const handler = state.clientTools[functionName];
+    if (!handler) {
+      sendToolInvokeResult(toolCallId, {
+        error: 'No client handler registered for ' + functionName
+      });
+      return;
+    }
+
+    try {
+      const result = await handler(payload.arguments || {}, {
+        toolCallId: toolCallId,
+        functionName: functionName,
+        toolUuid: payload.tool_uuid
+      });
+      sendToolInvokeResult(toolCallId, { result: result });
+    } catch (error) {
+      sendToolInvokeResult(toolCallId, {
+        error: error && error.message ? error.message : String(error)
+      });
     }
   }
 
@@ -2334,6 +2378,9 @@
     // data-dograh-context supplied; applies to the next conversation started.
     setContext: setContextVariables,
     getContext: () => ({ ...(state.config.contextVariables || {}) }),
+    setClientTools: (handlers) => {
+      state.clientTools = handlers && typeof handlers === 'object' ? { ...handlers } : {};
+    },
 
     // Floating widget specific
     open: openWidget,

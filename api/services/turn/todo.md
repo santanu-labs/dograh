@@ -145,19 +145,17 @@ const { status, start, end, error, session } = useDograhVoiceCall({
 
 ## Phase 5 — Client-side tool execution (browser runs tools)
 
-**Finding:** No browser tool protocol exists. All tools execute in `CustomToolManager` on the server. Client invocation needs new backend + WS protocol.
-
-| # | Task | Details |
-|---|------|---------|
-| 5.1 | Design WS protocol | `tool-invoke-request` (server→client), `tool-invoke-result` (client→server) |
-| 5.2 | Add `browser_tool` / `client_tool` category | `api/enums.py`, tool schema, DB |
-| 5.3 | Implement server stub handler | Await client result with timeout in `CustomToolManager` |
-| 5.4 | Wire into signaling WS | Route invoke/result on authenticated + public paths |
-| 5.5 | Security model | Allowlist per workflow; embed origin checks; no arbitrary code |
-| 5.6 | Add `useDograhClientTools` hook | `handlers: Record<string, (args) => Promise<unknown>>` |
-| 5.7 | UI for tool registration in workflow builder | Optional: mark tools as “browser-executed” |
-| 5.8 | Integration tests | End-to-end: LLM calls tool → browser runs → result back |
-| 5.9 | Document security implications | Embed docs: only trusted origins, handler allowlist |
+| # | Task | Status | Details |
+|---|------|--------|---------|
+| 5.1 | Design WS protocol | ✅ Done | `tool-invoke-request` / `tool-invoke-result` |
+| 5.2 | Add `browser_tool` category | ✅ Done | enum, schema, alembic migration |
+| 5.3 | Implement server handler | ✅ Done | `CustomToolManager._create_browser_tool_handler` |
+| 5.4 | Wire into signaling WS | ✅ Done | `_handle_tool_invoke_result` in webrtc_signaling |
+| 5.5 | Security model | ✅ Done | workflow tool allowlist + embed origin gate |
+| 5.6 | Client handlers | ✅ Done | `clientTools` on hook/client + `DograhWidget.setClientTools` |
+| 5.7 | UI for tool registration | ⬜ Todo | create browser_tool via Tools API; builder UI optional |
+| 5.8 | Integration tests | ✅ Partial | registry unit tests; E2E with live call todo |
+| 5.9 | Document security | ✅ Done | `docs/voice-agent/client-tools.mdx` |
 
 **Reference files**
 - `api/services/workflow/pipecat_engine_custom_tools.py`
@@ -180,12 +178,12 @@ useDograhVoiceCall({
 
 ## Phase 6 — SDK / product alignment (optional)
 
-| # | Task | Details |
-|---|------|---------|
-| 6.1 | Extend `@dograh/sdk` or keep separate | `@dograh/sdk` = authoring; `@dograh/embed-react` = runtime |
-| 6.2 | Export widget TypeScript types | `@dograh/embed-types` for `window.DograhWidget` |
-| 6.3 | Chat embed hook | `useDograhChat` mirroring voice (public embed chat API) |
-| 6.4 | Upstream contributions | Cloudflare TURN, R2 Railway docs, embed-react |
+| # | Task | Status | Details |
+|---|------|--------|---------|
+| 6.1 | Extend `@dograh/sdk` or keep separate | ✅ Done | `@dograh/sdk` = authoring; `@dograh/embed-react` = runtime |
+| 6.2 | Export widget TypeScript types | ✅ Done | `sdk/embed-types/` (`@dograh/embed-types`) |
+| 6.3 | Chat embed hook | ✅ Done | `useDograhChat` + `DograhChatClient` |
+| 6.4 | Upstream contributions | ⬜ Todo | PR Cloudflare TURN, R2 docs, embed-react to dograh-hq |
 
 ---
 
@@ -212,7 +210,7 @@ Phase 6  → polish / upstream
 | Call recordings | ✅ | ❌ (upload fails) | ✅ | ✅ |
 | React hook for calls | ❌ (widget only) | ❌ | ❌ | ✅ (local package) |
 | Observe tool calls in app | N/A | ❌ | ❌ | ✅ (Phase 4, local) |
-| Browser executes tools | ❌ | ❌ | ❌ | ✅ (Phase 5) |
+| Browser executes tools | ❌ | ❌ | ❌ | ✅ (Phase 5, voice embed) |
 | Phone via carrier | ✅ | ✅ (bring Twilio etc.) | ✅ | ✅ |
 
 ---

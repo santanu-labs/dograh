@@ -43,6 +43,54 @@ export interface ToolCallState {
   result?: string | null;
 }
 
+export interface ClientToolContext {
+  toolCallId: string;
+  functionName: string;
+  toolUuid: string;
+}
+
+export type ClientToolHandler = (
+  args: Record<string, unknown>,
+  context: ClientToolContext,
+) => Promise<unknown> | unknown;
+
+export interface ToolInvokeRequestPayload {
+  tool_call_id: string;
+  function_name: string;
+  tool_uuid: string;
+  arguments: Record<string, unknown>;
+  timeout_ms?: number;
+}
+
+export type ChatStatus =
+  | "idle"
+  | "starting"
+  | "ready"
+  | "waiting"
+  | "ended"
+  | "expired"
+  | "error";
+
+export interface ChatMessage {
+  text: string;
+  createdAt?: string | null;
+}
+
+export interface ChatTurn {
+  id: string;
+  status: string;
+  userMessage?: ChatMessage | null;
+  assistantMessage?: ChatMessage | null;
+}
+
+export interface ChatSession {
+  sessionToken: string;
+  workflowRunId: number;
+  revision: number;
+  turns: ChatTurn[];
+  isCompleted: boolean;
+}
+
 export interface VoiceCallConnectedInfo {
   workflowId: number;
   workflowRunId: number;
@@ -67,6 +115,8 @@ export interface DograhVoiceCallClientOptions {
   onDisconnected?: (info: VoiceCallDisconnectedInfo) => void;
   onToolCallStart?: (call: ToolCallState) => void;
   onToolCallEnd?: (call: ToolCallState) => void;
+  /** Handlers for browser_tool category tools (server sends tool-invoke-request). */
+  clientTools?: Record<string, ClientToolHandler>;
 }
 
 export interface UseDograhVoiceCallOptions extends DograhVoiceCallClientOptions {
@@ -82,5 +132,26 @@ export interface UseDograhVoiceCallResult {
   isReady: boolean;
   start: () => Promise<void>;
   end: () => void;
+  setContext: (context: Record<string, string | number | boolean | null>) => void;
+}
+
+export interface UseDograhChatOptions {
+  embedToken: string;
+  apiBaseUrl: string;
+  origin?: string;
+  context?: Record<string, string | number | boolean | null>;
+  autoStart?: boolean;
+  onMessage?: (text: string, turn: ChatTurn) => void;
+  onStatusChange?: (status: ChatStatus) => void;
+  onError?: (error: Error) => void;
+}
+
+export interface UseDograhChatResult {
+  status: ChatStatus;
+  error: Error | null;
+  session: ChatSession | null;
+  turns: ChatTurn[];
+  sendMessage: (text: string) => Promise<void>;
+  end: () => Promise<void>;
   setContext: (context: Record<string, string | number | boolean | null>) => void;
 }

@@ -466,6 +466,12 @@ class SignalingManager:
             # Unregister WebSocket sender for real-time feedback
             unregister_ws_sender(workflow_run_id)
 
+            from api.services.pipecat.client_tool_registry import (
+                cancel_pending_for_run,
+            )
+
+            cancel_pending_for_run(workflow_run_id)
+
             # Clean up peer connections owned by this WebSocket.
             # Note: In a WebSocket-based signaling approach (vs HTTP PATCH),
             # we maintain our own connection map instead of relying on
@@ -517,6 +523,34 @@ class SignalingManager:
             await self._handle_ice_candidate(payload, connection_key)
         elif msg_type == "renegotiate":
             await self._handle_renegotiation(ws, payload, connection_key)
+        elif msg_type == "tool-invoke-result":
+            await self._handle_tool_invoke_result(payload, workflow_run_id)
+
+    async def _handle_tool_invoke_result(
+        self, payload: dict, workflow_run_id: int
+    ) -> None:
+        """Resolve a pending browser-tool invocation from the client."""
+        from api.services.pipecat.client_tool_registry import complete_client_tool
+
+        tool_call_id = payload.get("tool_call_id")
+        if not isinstance(tool_call_id, str) or not tool_call_id:
+            logger.warning("tool-invoke-result missing tool_call_id")
+            return
+
+        error = payload.get("error")
+        if error is not None and not isinstance(error, str):
+            error = str(error)
+
+        if not complete_client_tool(
+            workflow_run_id,
+            tool_call_id,
+            result=payload.get("result"),
+            error=error,
+        ):
+            logger.warning(
+                f"No pending browser tool for run={workflow_run_id} "
+                f"tool_call_id={tool_call_id}"
+            )
 
     async def _handle_offer(
         self,

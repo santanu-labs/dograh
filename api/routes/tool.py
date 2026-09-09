@@ -8,6 +8,7 @@ from api.db import db_client
 from api.db.models import UserModel
 from api.enums import ToolCategory, ToolStatus
 from api.schemas.tool import (
+    BrowserToolDefinition,
     CalculatorToolDefinition,
     CreatedByResponse,
     CreateToolRequest,
@@ -48,6 +49,7 @@ from api.services.workflow.tools.custom_tool import (
 router = APIRouter(prefix="/tools")
 
 __all__ = [
+    "BrowserToolDefinition",
     "CalculatorToolDefinition",
     "CreateToolRequest",
     "CreatedByResponse",

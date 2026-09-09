@@ -25,6 +25,7 @@ export function useDograhVoiceCall(
     onDisconnected,
     onToolCallStart,
     onToolCallEnd,
+    clientTools,
   } = options;
 
   const [status, setStatus] = useState<VoiceCallStatus>("idle");
@@ -85,10 +86,11 @@ export function useDograhVoiceCall(
         });
         onToolCallEnd?.(call);
       },
+      clientTools,
     });
     clientRef.current = instance;
     return instance;
-  }, [embedToken, apiBaseUrl, origin, playRemoteAudio]);
+  }, [embedToken, apiBaseUrl, origin, playRemoteAudio, clientTools]);
 
   useEffect(() => {
     const hasConfig =

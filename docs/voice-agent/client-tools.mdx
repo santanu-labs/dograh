@@ -1,0 +1,55 @@
+---
+title: Browser-executed tools
+description: Run selected tools in the visitor's browser during embed voice calls.
+---
+
+Dograh can delegate **browser_tool** category tools to your embed page. The server LLM still decides when to call the tool; your JavaScript handler runs locally and returns the result over the signaling WebSocket.
+
+## When to use
+
+- Look up data from the host app's session (CRM id, cart, auth token)
+- Trigger UI actions on the parent page
+- Call your own backend with the visitor's cookies
+
+## Security
+
+- Only register handlers you explicitly allow — the LLM can only invoke tools attached to the workflow node.
+- Embed tokens are origin-gated; add every production domain to **allowed domains**.
+- Handlers run with full access to your page — never `eval` tool arguments or expose secrets in return values spoken by the agent.
+- Browser tools require an active voice WebSocket; chat embeds do not support client execution yet.
+
+## Create a browser tool
+
+In **Tools**, create a tool with category **browser_tool** and define parameters (same shape as HTTP API tools). Attach the tool to agent nodes in your workflow.
+
+## React embed
+
+```tsx
+useDograhVoiceCall({
+  embedToken: "...",
+  apiBaseUrl: "https://api.example.com",
+  clientTools: {
+    lookup_order: async ({ orderId }) => {
+      const res = await fetch(`/api/orders/${orderId}`);
+      return res.json();
+    },
+  },
+});
+```
+
+## Script tag embed
+
+```javascript
+DograhWidget.setClientTools({
+  lookup_order: async (args) => fetch(`/api/orders/${args.orderId}`).then((r) => r.json()),
+});
+```
+
+## Protocol
+
+| Direction | Message | Purpose |
+|-----------|---------|---------|
+| Server → client | `tool-invoke-request` | Run handler; includes `tool_call_id`, `function_name`, `arguments` |
+| Client → server | `tool-invoke-result` | Return `{ result }` or `{ error }` with the same `tool_call_id` |
+
+You still receive `rtf-function-call-start/end` events for observation/logging.

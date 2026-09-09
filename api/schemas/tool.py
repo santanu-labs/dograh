@@ -29,6 +29,7 @@ ToolCategoryValue = Literal[
     "native",
     "integration",
     "mcp",
+    "browser_tool",
 ]
 
 
@@ -543,12 +544,36 @@ class McpToolDefinition(BaseModel):
     config: McpToolConfig = Field(description="MCP server configuration.")
 
 
+class BrowserToolConfig(BaseModel):
+    """Configuration for tools executed in the embed/browser client."""
+
+    parameters: list[ToolParameter] | None = Field(
+        default=None,
+        description="Parameters the LLM supplies; forwarded to the browser handler.",
+    )
+    timeout_ms: int = Field(
+        default=15000,
+        ge=1000,
+        le=60000,
+        description="Max wait for the browser to return a tool-invoke-result.",
+    )
+
+
+class BrowserToolDefinition(BaseModel):
+    """Tool definition for browser-executed tools (embed / React hook)."""
+
+    schema_version: int = Field(default=1, description="Schema version.")
+    type: Literal["browser_tool"] = Field(description="Tool type.")
+    config: BrowserToolConfig = Field(description="Browser tool configuration.")
+
+
 ToolDefinition = Annotated[
     HttpApiToolDefinition
     | EndCallToolDefinition
     | TransferCallToolDefinition
     | CalculatorToolDefinition
-    | McpToolDefinition,
+    | McpToolDefinition
+    | BrowserToolDefinition,
     Field(discriminator="type"),
 ]
 

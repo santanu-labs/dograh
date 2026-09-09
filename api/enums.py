@@ -214,6 +214,7 @@ class ToolCategory(Enum):
     NATIVE = "native"  # Built-in integrations (future: dtmf_input)
     INTEGRATION = "integration"  # Third-party integrations (future: Google Calendar, Salesforce, etc.)
     MCP = "mcp"  # Customer-provided MCP server exposing a tool catalog
+    BROWSER_TOOL = "browser_tool"  # Executed in the embed/browser client via signaling WS
 
 
 class ToolStatus(Enum):

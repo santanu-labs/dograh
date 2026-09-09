@@ -61,7 +61,8 @@ Create an embed token in the Dograh UI: **Workflow → Settings → Embed**. All
 | `embedToken` | Public embed token from the dashboard |
 | `apiBaseUrl` | Dograh API base URL (no trailing slash) |
 | `context` | Template variables passed to `POST /public/embed/init` |
-| `onToolCallStart` / `onToolCallEnd` | Server-side tool invocations during the call |
+| `onToolCallStart` / `onToolCallEnd` | Observe tool invocations during the call |
+| `clientTools` | Handlers for **browser_tool** category tools (run in your page) |
 | `autoLoadConfig` | Prefetch embed config on mount (default `true`) |
 
 Returns `{ status, error, session, toolCalls, isReady, start, end, setContext }`.
@@ -74,7 +75,34 @@ Headless class with the same behavior for non-React apps. Exported from this pac
 
 Optional render-prop wrapper with a minimal default button UI.
 
+### `useDograhChat(options)`
+
+Chat embed hook for tokens with `widgetType: "chat"`. Uses REST only (no WebRTC).
+
+```tsx
+const { status, turns, sendMessage, end } = useDograhChat({
+  embedToken: "...",
+  apiBaseUrl: "https://api.example.com",
+  autoStart: true,
+  onMessage: (text) => console.log(text),
+});
+```
+
+### Browser-executed tools
+
+```tsx
+useDograhVoiceCall({
+  clientTools: {
+    lookup_order: async ({ orderId }) =>
+      fetch(`/api/orders/${orderId}`).then((r) => r.json()),
+  },
+});
+```
+
+See [client-tools docs](../../docs/voice-agent/client-tools.mdx) for security notes.
+
 ## Related
 
+- [`@dograh/embed-types`](../embed-types/) — shared widget TypeScript types
 - [`@dograh/sdk`](../typescript/) — workflow authoring (not runtime calls)
 - [`dograh-widget.js`](../../ui/public/embed/dograh-widget.js) — script-tag embed

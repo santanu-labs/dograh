@@ -28,6 +28,11 @@ from api.services.telephony.external_pbx import resolve_external_pbx_field_mappi
 from api.services.telephony.factory import get_telephony_provider_for_run
 from api.services.telephony.transfer_event_protocol import TransferContext
 from api.services.workflow.tools.calculator import get_calculator_tools, safe_calculator
+from api.services.pipecat.client_tool_registry import (
+    ClientToolError,
+    await_client_tool_result,
+)
+from api.services.pipecat.ws_sender_registry import get_ws_sender
 from api.services.workflow.tools.custom_tool import (
     execute_http_tool,
     tool_to_function_schema,
@@ -335,6 +340,11 @@ class CustomToolManager:
         elif tool.category == ToolCategory.TRANSFER_CALL.value:
             timeout_secs = self._transfer_handler_timeout_secs(tool)
             handler = self._create_transfer_call_handler(tool, function_name)
+        elif tool.category == ToolCategory.BROWSER_TOOL.value:
+            config = (tool.definition or {}).get("config", {}) or {}
+            timeout_ms = config.get("timeout_ms", 15000)
+            timeout_secs = float(timeout_ms) / 1000
+            handler = self._create_browser_tool_handler(tool, function_name)
         else:
             timeout_ms = ((tool.definition or {}).get("config", {}) or {}).get(
                 "timeout_ms", 5000
@@ -392,6 +402,71 @@ class CustomToolManager:
                 await function_call_params.result_callback({"error": str(e)})
 
         self._engine.llm.register_function("safe_calculator", calculate_func)
+
+    def _create_browser_tool_handler(self, tool: Any, function_name: str):
+        """Create a handler that delegates execution to the signaling WebSocket client."""
+
+        async def browser_tool_handler(
+            function_call_params: FunctionCallParams,
+        ) -> None:
+            workflow_run_id = self._engine._workflow_run_id
+            tool_call_id = function_call_params.tool_call_id
+            if not workflow_run_id:
+                await function_call_params.result_callback(
+                    {"status": "error", "error": "Missing workflow run id"}
+                )
+                return
+
+            ws_sender = get_ws_sender(workflow_run_id)
+            if ws_sender is None:
+                await function_call_params.result_callback(
+                    {
+                        "status": "error",
+                        "error": "No browser client connected for tool execution",
+                    }
+                )
+                return
+
+            config = (tool.definition or {}).get("config", {}) or {}
+            timeout_ms = int(config.get("timeout_ms", 15000))
+            timeout_secs = float(timeout_ms) / 1000
+
+            logger.info(
+                f"Browser tool invoke: {function_name} "
+                f"(tool_uuid={tool.tool_uuid}, tool_call_id={tool_call_id})"
+            )
+
+            await ws_sender(
+                {
+                    "type": "tool-invoke-request",
+                    "payload": {
+                        "tool_call_id": tool_call_id,
+                        "function_name": function_name,
+                        "tool_uuid": tool.tool_uuid,
+                        "arguments": dict(function_call_params.arguments),
+                        "timeout_ms": timeout_ms,
+                    },
+                }
+            )
+
+            try:
+                result = await await_client_tool_result(
+                    workflow_run_id, tool_call_id, timeout_secs
+                )
+                await function_call_params.result_callback(result)
+            except ClientToolError as exc:
+                await function_call_params.result_callback(
+                    {"status": "error", "error": str(exc)}
+                )
+            except asyncio.TimeoutError:
+                await function_call_params.result_callback(
+                    {
+                        "status": "error",
+                        "error": f"Browser tool timed out after {timeout_ms}ms",
+                    }
+                )
+
+        return browser_tool_handler
 
     def _create_http_tool_handler(self, tool: Any, function_name: str):
         """Create a handler function for an HTTP API tool.
