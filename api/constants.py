@@ -249,7 +249,7 @@ DEFAULT_CIRCUIT_BREAKER_CONFIG = {
 }
 
 
-# Whether this deployment runs a TURN server (coturn).
+# Whether this deployment has a TURN server (self-hosted coturn or Cloudflare).
 ENABLE_COTURN = os.getenv("ENABLE_COTURN", "false").lower() == "true"
 TURN_SECRET = os.getenv("TURN_SECRET")
 # Host browsers dial for TURN/ICE. Derives from PUBLIC_HOST; set explicitly only
@@ -258,6 +258,10 @@ TURN_HOST = os.getenv("TURN_HOST") or PUBLIC_HOST or "localhost"
 TURN_PORT = int(os.getenv("TURN_PORT", "3478"))
 TURN_TLS_PORT = int(os.getenv("TURN_TLS_PORT", "5349"))
 TURN_CREDENTIAL_TTL = int(os.getenv("TURN_CREDENTIAL_TTL", "86400"))
+# Cloudflare Realtime TURN. When both are set, credentials are minted via
+# Cloudflare's generate-ice-servers API instead of coturn HMAC.
+CLOUDFLARE_TURN_KEY_ID = os.getenv("CLOUDFLARE_TURN_KEY_ID")
+CLOUDFLARE_TURN_API_TOKEN = os.getenv("CLOUDFLARE_TURN_API_TOKEN")
 # Diagnostic flag: when true, strip all non-relay ICE candidates from the
 # answer SDP so every media path must traverse the TURN server. Use for
 # verifying TURN connectivity end-to-end; expect connection failures if

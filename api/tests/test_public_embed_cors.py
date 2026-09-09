@@ -237,11 +237,28 @@ def test_get_config_reports_turn_disabled_when_unconfigured(monkeypatch):
     assert body["force_turn_relay"] is False
 
 
+def test_get_config_reports_turn_enabled_with_cloudflare(monkeypatch):
+    monkeypatch.setattr("api.routes.public_embed.ENABLE_COTURN", True)
+    monkeypatch.setattr("api.routes.public_embed.TURN_SECRET", None)
+    monkeypatch.setattr(
+        "api.routes.public_embed.cloudflare_turn_configured", lambda: True
+    )
+    resp = client.get(
+        "/api/v1/public/embed/config/valid",
+        headers={"Origin": "https://mysite.vercel.app"},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["turn_enabled"] is True
+
+
 def test_get_config_reports_turn_disabled_without_secret(monkeypatch):
     # ENABLE_COTURN alone cannot satisfy the credential endpoint: without the
     # shared secret it cannot sign credentials, so the widget must skip it.
     monkeypatch.setattr("api.routes.public_embed.ENABLE_COTURN", True)
     monkeypatch.setattr("api.routes.public_embed.TURN_SECRET", None)
+    monkeypatch.setattr(
+        "api.routes.public_embed.cloudflare_turn_configured", lambda: False
+    )
     resp = client.get(
         "/api/v1/public/embed/config/valid",
         headers={"Origin": "https://mysite.vercel.app"},

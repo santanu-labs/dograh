@@ -35,6 +35,8 @@ from api.constants import (
 from api.db.models import UserModel
 from api.enums import Environment
 from api.services.auth.depends import get_user
+from api.services.turn import cloudflare_turn_configured, turn_credentials_available
+from api.services.turn.cloudflare import fetch_cloudflare_turn_credentials
 
 router = APIRouter(prefix="/turn", tags=["turn"])
 
@@ -68,6 +70,9 @@ def generate_turn_credentials(user_id: str, ttl: int = TURN_CREDENTIAL_TTL) -> d
     Raises:
         ValueError: If TURN_SECRET is not configured
     """
+    if cloudflare_turn_configured():
+        return fetch_cloudflare_turn_credentials(user_id, ttl=ttl)
+
     if not TURN_SECRET:
         raise ValueError("TURN_SECRET is not configured")
 
@@ -145,15 +150,11 @@ async def get_turn_credentials(
     Returns:
         TurnCredentialsResponse with username, password, ttl, and TURN URIs
     """
-    if not ENABLE_COTURN:
-        logger.warning("TURN credentials requested but ENABLE_COTURN is false")
-        raise HTTPException(
-            status_code=503,
-            detail="TURN server not configured",
+    if not turn_credentials_available():
+        logger.warning(
+            "TURN credentials requested but no TURN provider is configured "
+            f"(ENABLE_COTURN={ENABLE_COTURN})"
         )
-
-    if not TURN_SECRET:
-        logger.warning("TURN credentials requested but TURN_SECRET not configured")
         raise HTTPException(
             status_code=503,
             detail="TURN server not configured",

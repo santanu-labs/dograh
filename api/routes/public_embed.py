@@ -28,6 +28,7 @@ from api.routes.turn_credentials import (
     TurnCredentialsResponse,
     generate_turn_credentials,
 )
+from api.services.turn import cloudflare_turn_configured
 from api.schemas.embed_chat import PublicEmbedChatSessionResponse
 from api.schemas.widget_texts import WidgetTexts
 from api.services.workflow.embed_chat_limiter import allow_embed_chat_init
@@ -59,7 +60,7 @@ EMBED_CORS_MAX_AGE = "86400"
 
 def _turn_credentials_available() -> bool:
     """Return whether the public endpoint can mint TURN credentials."""
-    return ENABLE_COTURN and bool(TURN_SECRET)
+    return ENABLE_COTURN and (bool(TURN_SECRET) or cloudflare_turn_configured())
 
 
 class InitEmbedRequest(BaseModel):
@@ -541,9 +542,8 @@ async def get_public_turn_credentials(
     if origin:
         _allow_embed_origin(response, origin)
 
-    # Check if TURN is configured. Both conditions matter: ENABLE_COTURN is what
-    # the config endpoint advertised, and without a secret there is nothing to
-    # sign credentials with.
+    # Check if TURN is configured. ENABLE_COTURN is what the config endpoint
+    # advertised; credentials also need coturn HMAC (TURN_SECRET) or Cloudflare.
     if not _turn_credentials_available():
         raise HTTPException(
             status_code=503,

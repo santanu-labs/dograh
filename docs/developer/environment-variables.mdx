@@ -131,13 +131,15 @@ Presigned URLs point at `S3_ENDPOINT_URL`, so that host must be reachable from t
 
 | Variable | Default | Description |
 |---|---|---|
-| `ENABLE_COTURN` | `false` | Whether this deployment runs a TURN server. Reported to browsers as `turn_enabled` on `/api/v1/health` and in the embed widget config; when `false` clients skip the TURN credential request and connect over STUN, and the server returns 503 from the credential endpoints. Set to `true` wherever coturn is running — the setup scripts and Helm chart do this for you |
-| `TURN_HOST` | `PUBLIC_HOST`, else `localhost` | TURN server hostname for WebRTC NAT traversal. Derives from `PUBLIC_HOST`; set explicitly only when TURN runs on a separate host |
+| `ENABLE_COTURN` | `false` | Whether this deployment has a TURN server (self-hosted coturn or Cloudflare Realtime). Reported to browsers as `turn_enabled` on `/api/v1/health` and in the embed widget config only when credentials can actually be minted; when `false` clients skip the TURN credential request and connect over STUN, and the server returns 503 from the credential endpoints. Set to `true` wherever coturn or Cloudflare TURN is configured |
+| `TURN_HOST` | `PUBLIC_HOST`, else `localhost` | TURN server hostname for WebRTC NAT traversal. Derives from `PUBLIC_HOST`; set explicitly only when TURN runs on a separate host. Unused when Cloudflare Realtime TURN is configured |
 | `TURN_PORT` | `3478` | TURN server port |
 | `TURN_TLS_PORT` | `5349` | TURN server TLS port |
-| `TURN_SECRET` | `null` | **Required for WebRTC.** Shared secret for TURN credential generation |
-| `TURN_CREDENTIAL_TTL` | `86400` | TURN credential validity in seconds (default: 24h) |
-| `FORCE_TURN_RELAY` | `false` | Diagnostic flag. When `true`, restricts ICE to relay-only candidates on both server (SDP filter) and browser (`iceTransportPolicy: 'relay'`). Use to verify TURN connectivity end-to-end — calls fail cleanly if TURN is misconfigured instead of silently falling back to a direct path. |
+| `TURN_SECRET` | `null` | Shared secret for coturn HMAC credential generation. Required for self-hosted coturn; omit when using Cloudflare Realtime TURN |
+| `CLOUDFLARE_TURN_KEY_ID` | `null` | Cloudflare Realtime TURN key id. Together with `CLOUDFLARE_TURN_API_TOKEN`, Dograh fetches ice servers from Cloudflare on demand (cached until shortly before expiry) |
+| `CLOUDFLARE_TURN_API_TOKEN` | `null` | API token for the Cloudflare Realtime TURN key. Never commit this value |
+| `TURN_CREDENTIAL_TTL` | `86400` | TURN credential validity in seconds (default: 24h). Cloudflare caps this at 48 hours |
+| `FORCE_TURN_RELAY` | `false` | Diagnostic flag. When `true`, restricts ICE to relay-only candidates on both server (SDP filter) and browser (`iceTransportPolicy: 'relay'`). Use to verify TURN connectivity end-to-end — calls fail cleanly if TURN is misconfigured instead of silently falling back to a direct path. Recommended on PaaS hosts (Railway, etc.) that have no public UDP |
 
 ---
 

@@ -9,9 +9,10 @@ Uses the SmallWebRTC API contract:
 - add_ice_candidate() for trickling support
 
 TURN Authentication:
-- Uses time-limited credentials (TURN REST API) when TURN_SECRET is configured
-- Credentials are generated per-connection using HMAC-SHA1
-- Falls back to static credentials if TURN_SECRET is not set (legacy mode)
+- Uses Cloudflare Realtime TURN when CLOUDFLARE_TURN_KEY_ID + token are set
+- Otherwise uses time-limited credentials (TURN REST API) when TURN_SECRET is set
+- Credentials are generated per-connection using HMAC-SHA1 for coturn
+- Falls back to static credentials if neither provider is set (legacy mode)
 """
 
 import asyncio
@@ -45,6 +46,7 @@ from api.routes.turn_credentials import (
     TURN_SECRET,
     generate_turn_credentials,
 )
+from api.services.turn import cloudflare_turn_configured
 from api.services.auth.depends import get_user_ws
 from api.services.call_concurrency import (
     CallConcurrencyLimitError,
@@ -251,7 +253,9 @@ def get_ice_servers(user_id: Optional[str] = None) -> List[RTCIceServer]:
     # answer to "is there a TURN server?" — the same flag /health advertises to
     # browsers — so the server side must respect it too, or it would try to
     # relay through a TURN server the deployment says it doesn't have.
-    if not ENABLE_COTURN or not TURN_HOST:
+    # Cloudflare Realtime does not use TURN_HOST; coturn / static creds do.
+    has_turn_target = cloudflare_turn_configured() or bool(TURN_HOST)
+    if not ENABLE_COTURN or not has_turn_target:
         if FORCE_TURN_RELAY:
             # Fail loudly rather than silently degrading to STUN: relay-only was
             # requested precisely because direct connectivity is known not to
@@ -259,15 +263,17 @@ def get_ice_servers(user_id: Optional[str] = None) -> List[RTCIceServer]:
             # honest outcome — but it needs to be diagnosable.
             logger.error(
                 "FORCE_TURN_RELAY is on but no TURN server is configured "
-                f"(ENABLE_COTURN={ENABLE_COTURN}, TURN_HOST={TURN_HOST!r}). "
+                f"(ENABLE_COTURN={ENABLE_COTURN}, TURN_HOST={TURN_HOST!r}, "
+                f"cloudflare={cloudflare_turn_configured()}). "
                 "Relay-only connections cannot succeed until TURN is configured."
             )
         return servers
 
-    # Use time-limited credentials if TURN_SECRET is configured (recommended)
-    if TURN_SECRET and user_id:
+    # Cloudflare Realtime or coturn HMAC (TURN REST API). Cloudflare does not
+    # need a local TURN_SECRET; the key/token pair is enough.
+    if cloudflare_turn_configured() or (TURN_SECRET and user_id):
         try:
-            credentials = generate_turn_credentials(user_id)
+            credentials = generate_turn_credentials(user_id or "server")
             servers.append(
                 RTCIceServer(
                     urls=credentials["uris"],
