@@ -98,6 +98,27 @@ button:last-child {
   padding-left: 1.25rem;
 }
 
+.field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.field span {
+  font-size: 0.85rem;
+  color: #9aa0a6;
+}
+
+.field input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #2a2f3a;
+  border-radius: 8px;
+  padding: 0.65rem 0.75rem;
+  font: inherit;
+  background: #0f1115;
+  color: #e8eaed;
+}
+
 .tool-list pre {
   margin: 0.5rem 0 0;
   padding: 0.5rem;

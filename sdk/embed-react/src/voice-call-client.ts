@@ -96,18 +96,33 @@ export class DograhVoiceCallClient {
   }
 
   async loadConfig(): Promise<EmbedConfigResponse> {
-    const response = await fetch(
-      `${this.apiBaseUrl}/api/v1/public/embed/config/${this.embedToken}`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Origin: this.origin,
+    if (!this.embedToken.trim()) {
+      throw new Error("Embed token is required");
+    }
+
+    let response: Response;
+    try {
+      response = await fetch(
+        `${this.apiBaseUrl}/api/v1/public/embed/config/${this.embedToken}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
         },
-      },
-    );
+      );
+    } catch {
+      throw new Error(
+        "Could not reach the Dograh API. Check VITE_DOGRAH_API_URL and that http://localhost:5174 is in the embed token allowed domains.",
+      );
+    }
 
     if (!response.ok) {
+      if (response.status === 403) {
+        throw new Error(
+          "Embed token rejected (403). Confirm the token is active and add http://localhost:5174 to allowed domains in Workflow → Settings → Embed.",
+        );
+      }
       throw new Error(`Failed to fetch embed config: ${response.status}`);
     }
 

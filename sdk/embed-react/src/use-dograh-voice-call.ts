@@ -91,8 +91,14 @@ export function useDograhVoiceCall(
   }, [embedToken, apiBaseUrl, origin, playRemoteAudio]);
 
   useEffect(() => {
-    if (!autoLoadConfig) {
-      setIsReady(true);
+    const hasConfig =
+      Boolean(embedToken?.trim()) && Boolean(apiBaseUrl?.trim());
+
+    if (!autoLoadConfig || !hasConfig) {
+      setIsReady(!autoLoadConfig || hasConfig);
+      if (!hasConfig) {
+        setError(null);
+      }
       return;
     }
 
@@ -112,7 +118,7 @@ export function useDograhVoiceCall(
     return () => {
       cancelled = true;
     };
-  }, [autoLoadConfig, client]);
+  }, [autoLoadConfig, client, embedToken, apiBaseUrl]);
 
   useEffect(() => {
     return () => {
