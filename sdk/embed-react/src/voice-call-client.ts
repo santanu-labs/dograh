@@ -7,6 +7,11 @@ import type {
   VoiceCallSession,
   VoiceCallStatus,
 } from "./types.js";
+import {
+  toolCallEndFromMessage,
+  toolCallStartFromMessage,
+  type SignalingMessage,
+} from "./signaling-messages.js";
 import { httpToWs, normalizeApiBaseUrl } from "./utils.js";
 
 export { normalizeApiBaseUrl } from "./utils.js";
@@ -21,11 +26,6 @@ function generatePeerId(): string {
       .join("")
   );
 }
-
-type SignalingMessage = {
-  type: string;
-  payload?: Record<string, unknown>;
-};
 
 /**
  * Browser voice-call client for Dograh public embed (REST init + WS signaling).
@@ -405,38 +405,19 @@ export class DograhVoiceCallClient {
         this.stopCall({ graceful: true });
         break;
       case "rtf-function-call-start": {
-        const payload = message.payload as {
-          function_name?: string;
-          tool_call_id?: string;
-          arguments?: Record<string, unknown>;
-        };
-        if (!payload.tool_call_id) break;
-        const call: ToolCallState = {
-          toolCallId: payload.tool_call_id,
-          functionName: payload.function_name ?? "tool",
-          arguments: payload.arguments,
-          status: "running",
-        };
+        const call = toolCallStartFromMessage(message);
+        if (!call) break;
         this.toolCalls.set(call.toolCallId, call);
         this.callbacks.onToolCallStart?.(call);
         break;
       }
       case "rtf-function-call-end": {
-        const payload = message.payload as {
-          function_name?: string;
-          tool_call_id?: string;
-          result?: string | null;
-        };
-        if (!payload.tool_call_id) break;
-        const existing = this.toolCalls.get(payload.tool_call_id);
-        const call: ToolCallState = {
-          toolCallId: payload.tool_call_id,
-          functionName:
-            payload.function_name ?? existing?.functionName ?? "tool",
-          arguments: existing?.arguments,
-          status: "completed",
-          result: payload.result ?? null,
-        };
+        const payload = message.payload as { tool_call_id?: string } | undefined;
+        const existing = payload?.tool_call_id
+          ? this.toolCalls.get(payload.tool_call_id)
+          : undefined;
+        const call = toolCallEndFromMessage(message, existing);
+        if (!call) break;
         this.toolCalls.set(call.toolCallId, call);
         this.callbacks.onToolCallEnd?.(call);
         break;

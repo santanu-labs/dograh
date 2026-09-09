@@ -98,8 +98,8 @@ AWS_SECRET_ACCESS_KEY=<R2 secret key>
 | 3.7 | Implement `<DograhVoiceCall />` component | ✅ Done | Render-prop + default UI |
 | 3.8 | Support `context` / `setContext` | ✅ Done | |
 | 3.9 | Publish to npm | ⬜ Todo | Local `@dograh/embed-react@0.1.0` only |
-| 3.10 | Add docs + example app | ✅ Partial | README + `examples/embed-react/` stub |
-| 3.11 | Add tests | ✅ Partial | URL utils; WS state machine tests todo |
+| 3.10 | Add docs + example app | ✅ Done | Vite app at `examples/embed-react/` + `scripts/dev-embed-react.sh` |
+| 3.11 | Add tests | ✅ Done | URL utils + tool-call signaling parser tests |
 
 **Reference files**
 - `ui/public/embed/dograh-widget.js`
@@ -133,7 +133,7 @@ const { status, start, end, error, session } = useDograhVoiceCall({
 | 4.5 | Verify public WS sends tool events | ✅ Done | Same `RealtimeFeedbackObserver` path as authenticated WS |
 | 4.6 | Add TypeScript types | ✅ Done | `ToolCallState` in `types.ts` |
 | 4.7 | Document in embed-react README | ✅ Done | Tool call example in README |
-| 4.8 | Add tests | ⬜ Todo | WS message → hook state updates |
+| 4.8 | Add tests | ✅ Done | `tests/tool-calls.test.mts` |
 
 **Reference files**
 - `api/services/pipecat/realtime_feedback_observer.py`

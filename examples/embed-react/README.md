@@ -4,6 +4,14 @@ Minimal Vite + React app that uses `@dograh/embed-react` from the monorepo via a
 
 ## Setup
 
+From the repo root:
+
+```bash
+./scripts/dev-embed-react.sh
+```
+
+Or manually:
+
 ```bash
 cd examples/embed-react
 cp .env.example .env
@@ -12,6 +20,8 @@ cp .env.example .env
 npm install   # builds sdk/embed-react via postinstall
 npm run dev
 ```
+
+The dev server must be running for http://localhost:5174 — it does not start automatically with the rest of Dograh.
 
 Open http://localhost:5174. Allow microphone access when prompted.
 

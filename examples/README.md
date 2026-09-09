@@ -58,6 +58,12 @@ npm run edit    # load_and_edit_workflow.ts  (edit WORKFLOW_ID in the file first
 Vite + React demo for `@dograh/embed-react` — public embed WebRTC from your own UI.
 
 ```bash
+./scripts/dev-embed-react.sh
+```
+
+Or from `embed-react/`:
+
+```bash
 cd embed-react
 cp .env.example .env
 # Set VITE_DOGRAH_API_URL and VITE_DOGRAH_EMBED_TOKEN
