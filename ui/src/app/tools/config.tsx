@@ -1,6 +1,6 @@
 "use client";
 
-import { Calculator, Cog, Globe, Monitor, type LucideIcon, PhoneForwarded, PhoneOff, Puzzle } from "lucide-react";
+import { Calculator, Cog, Globe, type LucideIcon, Monitor, PhoneForwarded, PhoneOff, Puzzle } from "lucide-react";
 import { type ReactNode } from "react";
 
 import type {
