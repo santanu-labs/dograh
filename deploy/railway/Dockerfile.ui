@@ -1,0 +1,60 @@
+# Build Dograh UI from source for Railway (fork deployments).
+# Build context: repository root (same layout as ui/Dockerfile).
+#
+# Railway: connect service to santanu-labs/dograh@main, dockerfilePath deploy/railway/Dockerfile.ui
+
+# syntax=docker/dockerfile:1
+
+FROM node:22-alpine AS deps
+WORKDIR /app
+
+RUN apk add --no-cache python3 make g++ libc6-compat
+
+COPY ui/package*.json ./
+RUN --mount=type=cache,target=/root/.npm npm ci
+
+FROM node:22-alpine AS builder
+WORKDIR /app
+
+RUN apk add --no-cache libc6-compat
+
+COPY --from=deps /app/node_modules ./node_modules
+COPY ui/package*.json ./
+COPY ui/tsconfig.json ./
+COPY ui/next.config.ts ./
+COPY ui/components.json ./
+COPY ui/sentry.edge.config.ts ./
+COPY ui/sentry.server.config.ts ./
+COPY ui/postcss.config.mjs ./
+COPY ui/public ./public
+COPY ui/src ./src
+
+ARG BACKEND_URL=https://api-production-ccfc.up.railway.app
+ARG NEXT_PUBLIC_BACKEND_URL=https://api-production-ccfc.up.railway.app
+
+ENV NEXT_PUBLIC_NODE_ENV="oss"
+ENV NEXT_TELEMETRY_DISABLED="1"
+ENV NEXT_PUBLIC_CHATWOOT_URL="https://chat.dograh.com"
+ENV NEXT_PUBLIC_CHATWOOT_TOKEN="3fkFx2mCEjNHjM9gaNc4A82X"
+ENV BACKEND_URL="${BACKEND_URL}"
+ENV NEXT_PUBLIC_BACKEND_URL="${NEXT_PUBLIC_BACKEND_URL}"
+ENV NODE_OPTIONS="--max-old-space-size=4096"
+
+RUN npm run build && rm -rf /tmp/* /root/.npm /root/.next/cache
+
+FROM node:22-alpine AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs
+
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+
+USER nextjs
+EXPOSE 3010
+
+CMD ["sh", "-c", "PORT=${PORT:-3010} node server.js"]
