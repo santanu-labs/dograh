@@ -52,3 +52,18 @@ npm run create  # create_workflow.ts
 npm run build   # build_workflow_with_sdk.ts  (edit WORKFLOW_ID in the file first)
 npm run edit    # load_and_edit_workflow.ts  (edit WORKFLOW_ID in the file first)
 ```
+
+## Embed React (browser voice calls)
+
+Vite + React demo for `@dograh/embed-react` — public embed WebRTC from your own UI.
+
+```bash
+cd embed-react
+cp .env.example .env
+# Set VITE_DOGRAH_API_URL and VITE_DOGRAH_EMBED_TOKEN
+
+npm install
+npm run dev
+```
+
+See [embed-react/README.md](./embed-react/README.md) for embed token setup.

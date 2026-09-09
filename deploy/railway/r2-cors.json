@@ -1,0 +1,16 @@
+{
+  "rules": [
+    {
+      "allowed": {
+        "origins": [
+          "https://ui-production-3b6b.up.railway.app",
+          "http://localhost:3010"
+        ],
+        "methods": ["GET", "HEAD", "PUT"],
+        "headers": ["*"]
+      },
+      "expose": ["ETag", "Content-Length", "Content-Type"],
+      "maxAgeSeconds": 3600
+    }
+  ]
+}

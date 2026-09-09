@@ -1,0 +1,48 @@
+{
+  "name": "@dograh/embed-react",
+  "version": "0.1.0",
+  "description": "React hooks for Dograh browser voice embed (WebRTC + public embed API)",
+  "license": "BSD-2-Clause",
+  "author": "Zansat Technologies Private Limited",
+  "homepage": "https://dograh.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dograh-hq/dograh.git",
+    "directory": "sdk/embed-react"
+  },
+  "keywords": [
+    "dograh",
+    "voice-ai",
+    "webrtc",
+    "react",
+    "embed",
+    "hook"
+  ],
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "tsc && node --test --test-reporter=spec tests/*.test.mts"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "react": "^19.0.0",
+    "typescript": "^5.3.0"
+  }
+}

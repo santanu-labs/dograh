@@ -56,7 +56,9 @@
       onError: null,
       onStatusChange: null,
       onMessage: null,
-      onChatStateChange: null
+      onChatStateChange: null,
+      onToolCallStart: null,
+      onToolCallEnd: null
     }
   };
 
@@ -1134,6 +1136,32 @@
         console.log('Call ended by server:', message.payload);
         stopCall({ graceful: true });
         break;
+
+      case 'rtf-function-call-start': {
+        const payload = message.payload || {};
+        if (state.callbacks.onToolCallStart) {
+          state.callbacks.onToolCallStart({
+            toolCallId: payload.tool_call_id,
+            functionName: payload.function_name || 'tool',
+            arguments: payload.arguments,
+            status: 'running'
+          });
+        }
+        break;
+      }
+
+      case 'rtf-function-call-end': {
+        const payload = message.payload || {};
+        if (state.callbacks.onToolCallEnd) {
+          state.callbacks.onToolCallEnd({
+            toolCallId: payload.tool_call_id,
+            functionName: payload.function_name || 'tool',
+            result: payload.result,
+            status: 'completed'
+          });
+        }
+        break;
+      }
 
       default:
         console.warn('Unknown message type:', message.type);
@@ -2329,6 +2357,8 @@
     onCallEnd: (callback) => { state.callbacks.onCallEnd = callback; },
     onError: (callback) => { state.callbacks.onError = callback; },
     onStatusChange: (callback) => { state.callbacks.onStatusChange = callback; },
+    onToolCallStart: (callback) => { state.callbacks.onToolCallStart = callback; },
+    onToolCallEnd: (callback) => { state.callbacks.onToolCallEnd = callback; },
 
     // Check if inline mode
     isInlineMode: () => state.config.embedMode === 'inline',

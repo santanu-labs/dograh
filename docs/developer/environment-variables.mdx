@@ -125,6 +125,25 @@ AWS_SECRET_ACCESS_KEY=...
 Presigned URLs point at `S3_ENDPOINT_URL`, so that host must be reachable from the browser. Because browsers fetch transcripts cross-origin, the bucket also needs a CORS rule allowing your app's origin for `GET`/`HEAD` — configure this on the storage server (e.g. via `PutBucketCors`), not in Dograh.
 </Note>
 
+#### Cloudflare R2 (Railway / PaaS)
+
+For Railway and other PaaS deployments, use Cloudflare R2 instead of a co-located MinIO service. R2 avoids upload timeouts from the API container to a separate MinIO host over the public internet.
+
+```bash
+ENABLE_AWS_S3=true
+S3_BUCKET=dograh-voice-audio
+S3_REGION=auto
+S3_ENDPOINT_URL=https://<account_id>.r2.cloudflarestorage.com
+S3_SIGNATURE_VERSION=s3v4
+S3_ADDRESSING_STYLE=path
+AWS_ACCESS_KEY_ID=<R2 access key>
+AWS_SECRET_ACCESS_KEY=<R2 secret>
+```
+
+Create an R2 bucket and API token in the Cloudflare dashboard. Apply CORS on the bucket so the UI origin can fetch presigned recording URLs — see `deploy/railway/r2-cors.json` and `deploy/railway/R2.md` in the repo for a working example.
+
+Pair with Cloudflare Realtime TURN (`CLOUDFLARE_TURN_KEY_ID`, `CLOUDFLARE_TURN_API_TOKEN`, `ENABLE_COTURN=true`) and set `FORCE_TURN_RELAY=true` on Railway until you confirm relay connectivity without it.
+
 ---
 
 ## WebRTC
