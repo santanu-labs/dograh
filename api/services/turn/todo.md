@@ -153,7 +153,7 @@ const { status, start, end, error, session } = useDograhVoiceCall({
 | 5.4 | Wire into signaling WS | ✅ Done | `_handle_tool_invoke_result` in webrtc_signaling |
 | 5.5 | Security model | ✅ Done | workflow tool allowlist + embed origin gate |
 | 5.6 | Client handlers | ✅ Done | `clientTools` on hook/client + `DograhWidget.setClientTools` |
-| 5.7 | UI for tool registration | ⬜ Todo | create browser_tool via Tools API; builder UI optional |
+| 5.7 | UI for tool registration | ✅ Done | Tools UI — Browser Tool category + config panel |
 | 5.8 | Integration tests | ✅ Partial | registry unit tests; E2E with live call todo |
 | 5.9 | Document security | ✅ Done | `docs/voice-agent/client-tools.mdx` |
 

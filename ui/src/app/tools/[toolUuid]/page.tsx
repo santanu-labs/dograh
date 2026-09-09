@@ -60,6 +60,7 @@ import {
     type TransferDestinationSource,
 } from "../config";
 import {
+    BrowserToolConfig,
     buildHttpToolTestSnapshot,
     BuiltinToolConfig,
     EndCallToolConfig,
@@ -282,6 +283,23 @@ export default function ToolDetailPage() {
                 setTransferContextDestinationRules([]);
                 setTransferFallbackDestination("");
             }
+        } else if (tool.category === "browser_tool") {
+            const config = tool.definition?.config as
+                | { parameters?: ToolParameter[]; timeout_ms?: number }
+                | undefined;
+            if (config?.parameters && Array.isArray(config.parameters)) {
+                setParameters(
+                    config.parameters.map((p) => ({
+                        name: p.name || "",
+                        type: normalizeParameterType(p.type),
+                        description: p.description || "",
+                        required: p.required ?? true,
+                    })),
+                );
+            } else {
+                setParameters([]);
+            }
+            setTimeoutMs(config?.timeout_ms ?? 15000);
         } else if (tool.category === "mcp") {
             // Populate MCP specific fields
             const config = tool.definition?.config as
@@ -490,6 +508,19 @@ export default function ToolDetailPage() {
                 setError("MCP server URL must start with http:// or https://");
                 return;
             }
+        } else if (tool.category === "browser_tool") {
+            const invalidParams = parameters.filter(
+                (p) => !p.name.trim() || !p.description.trim(),
+            );
+            if (invalidParams.length > 0) {
+                setError("All parameters must have a name and description");
+                return;
+            }
+            const paramNames = parameters.map((p) => p.name.trim()).filter(Boolean);
+            if (new Set(paramNames).size !== paramNames.length) {
+                setError("Parameter names must be unique");
+                return;
+            }
         } else if (tool.category !== "end_call") {
             // Validate URL for HTTP API tools
             const urlValidation = validateUrl(url);
@@ -635,6 +666,28 @@ export default function ToolDetailPage() {
                     name,
                     description: description || undefined,
                     definition: createMcpDefinition(mcpUrl, mcpCredentialUuid, mcpToolsFilter),
+                };
+            } else if (tool.category === "browser_tool") {
+                const validParameters = parameters.filter((p) => p.name.trim());
+                requestBody = {
+                    name,
+                    description: description || undefined,
+                    definition: {
+                        schema_version: 1,
+                        type: "browser_tool",
+                        config: {
+                            parameters:
+                                validParameters.length > 0
+                                    ? validParameters.map((p) => ({
+                                        name: p.name.trim(),
+                                        type: p.type,
+                                        description: p.description.trim(),
+                                        required: p.required,
+                                    }))
+                                    : undefined,
+                            timeout_ms: timeoutMs,
+                        },
+                    },
                 };
             } else {
                 // Build HTTP API request body
@@ -825,6 +878,7 @@ const data = await response.json();`;
     const isTransferCallTool = tool.category === "transfer_call";
     const isBuiltinTool = tool.category === "calculator";
     const isMcpTool = tool.category === "mcp";
+    const isBrowserTool = tool.category === "browser_tool";
     const isHttpApiTool = tool.category === "http_api";
     const hasUnsavedHttpChanges =
         isHttpApiTool &&
@@ -969,6 +1023,17 @@ const data = await response.json();`;
                             onContextDestinationRulesChange={setTransferContextDestinationRules}
                             fallbackDestination={transferFallbackDestination}
                             onFallbackDestinationChange={setTransferFallbackDestination}
+                        />
+                    ) : isBrowserTool ? (
+                        <BrowserToolConfig
+                            name={name}
+                            onNameChange={setName}
+                            description={description}
+                            onDescriptionChange={setDescription}
+                            parameters={parameters}
+                            onParametersChange={setParameters}
+                            timeoutMs={timeoutMs}
+                            onTimeoutMsChange={setTimeoutMs}
                         />
                     ) : isMcpTool ? (
                         <Card>

@@ -257,6 +257,8 @@ export default function ToolsPage() {
                 return <Badge variant="destructive">End Call</Badge>;
             case "calculator":
                 return <Badge variant="secondary">Calculator</Badge>;
+            case "browser_tool":
+                return <Badge variant="secondary">Browser</Badge>;
             case "native":
                 return <Badge variant="secondary">Native</Badge>;
             case "integration":

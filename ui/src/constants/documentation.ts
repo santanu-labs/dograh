@@ -39,4 +39,5 @@ export const TOOL_DOCUMENTATION_URLS: Record<string, string> = {
     http_api: `${DOCS_BASE}/voice-agent/tools/http-api`,
     end_call: `${DOCS_BASE}/voice-agent/tools/end-call`,
     transfer_call: `${DOCS_BASE}/voice-agent/tools/call-transfer`,
+    browser_tool: `${DOCS_BASE}/voice-agent/client-tools`,
 };

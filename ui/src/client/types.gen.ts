@@ -861,6 +861,25 @@ export type CalculatorToolDefinition = {
 };
 
 /**
+ * BrowserToolConfig
+ */
+export type BrowserToolConfig = {
+    parameters?: Array<ToolParameter>;
+    timeout_ms?: number;
+};
+
+/**
+ * BrowserToolDefinition
+ *
+ * Tool definition for browser-executed tools (embed / React hook).
+ */
+export type BrowserToolDefinition = {
+    schema_version?: number;
+    type: 'browser_tool';
+    config: BrowserToolConfig;
+};
+
+/**
  * CallDispositionCodes
  */
 export type CallDispositionCodes = {
@@ -1674,7 +1693,7 @@ export type CreateToolRequest = {
      *
      * Tool category. Must match definition.type.
      */
-    category?: 'http_api' | 'end_call' | 'transfer_call' | 'calculator' | 'native' | 'integration' | 'mcp';
+    category?: 'http_api' | 'end_call' | 'transfer_call' | 'calculator' | 'browser_tool' | 'native' | 'integration' | 'mcp';
     /**
      * Icon
      *
@@ -1701,6 +1720,8 @@ export type CreateToolRequest = {
     } & TransferCallToolDefinition) | ({
         type: 'calculator';
     } & CalculatorToolDefinition) | ({
+        type: 'browser_tool';
+    } & BrowserToolDefinition) | ({
         type: 'mcp';
     } & McpToolDefinition);
 };
@@ -6969,6 +6990,8 @@ export type UpdateToolRequest = {
     } & TransferCallToolDefinition) | ({
         type: 'calculator';
     } & CalculatorToolDefinition) | ({
+        type: 'browser_tool';
+    } & BrowserToolDefinition) | ({
         type: 'mcp';
     } & McpToolDefinition) | null;
     /**

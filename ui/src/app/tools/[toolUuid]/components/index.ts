@@ -1,3 +1,4 @@
+export { BrowserToolConfig, type BrowserToolConfigProps } from "./BrowserToolConfig";
 export { BuiltinToolConfig, type BuiltinToolConfigProps } from "./BuiltinToolConfig";
 export { EndCallToolConfig, type EndCallToolConfigProps } from "./EndCallToolConfig";
 export { buildHttpToolTestSnapshot, HttpToolTestDialog } from "./http-tool-test";
